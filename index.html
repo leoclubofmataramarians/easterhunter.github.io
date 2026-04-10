@@ -27,7 +27,7 @@
         /* --- GLOBAL STYLES --- */
         body {
             margin: 0;
-            padding: 20px 0; /* Padding so it doesn't hit the screen edges vertically */
+            padding: 20px 0;
             background-color: #090211;
             background-image: radial-gradient(circle at center, var(--bg-light) 0%, #090211 85%);
             color: var(--text-main);
@@ -37,7 +37,7 @@
             justify-content: center;
             align-items: center;
             overflow-x: hidden; 
-            overflow-y: auto; /* Allows scrolling on smaller screens */
+            overflow-y: auto;
             position: relative;
         }
 
@@ -63,7 +63,7 @@
 
         body::after {
             content: '';
-            position: fixed; /* Changed to fixed so vignette stays while scrolling */
+            position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
             pointer-events: none;
@@ -108,7 +108,7 @@
             z-index: 10;
             position: relative;
             backdrop-filter: blur(8px);
-            margin: 20px auto; /* Ensures spacing on mobile when scrolling */
+            margin: 20px auto;
         }
 
         .level-container.active {
@@ -221,7 +221,7 @@
 
         /* --- BACKGROUND EASTER DECORATIONS --- */
         .bg-element {
-            position: fixed; /* Keeps them in place when scrolling */
+            position: fixed;
             opacity: 0.15;
             z-index: 2;
             pointer-events: none;
@@ -258,34 +258,16 @@
 
         /* --- MOBILE RESPONSIVENESS (MEDIA QUERIES) --- */
         @media (max-width: 600px) {
-            .level-container {
-                padding: 30px 15px; /* Less padding on small screens */
-                width: 95%;
-            }
-
+            .level-container { padding: 30px 15px; width: 95%; }
             h1 { font-size: 1.8rem; }
             h2 { font-size: 1.6rem; }
-            
             p { font-size: 1.1rem; margin-bottom: 10px;}
             .highlight { font-size: 1.3rem; }
             .pressure-text { font-size: 1rem; }
-
             .input-group { padding: 15px; }
             label { font-size: 1.1rem; }
-            
-            input[type="text"] {
-                font-size: 1.4rem;
-                padding: 10px;
-                width: 90%;
-            }
-
-            button {
-                font-size: 1.2rem;
-                padding: 10px 20px;
-                width: 90%;
-            }
-
-            /* Shrink background elements so they don't overpower the screen */
+            input[type="text"] { font-size: 1.4rem; padding: 10px; width: 90%; }
+            button { font-size: 1.2rem; padding: 10px 20px; width: 90%; }
             .bunny { width: 200px; bottom: -20px; right: -20px; opacity: 0.1;}
             .egg { width: 70px; top: 5%; left: 2%; opacity: 0.1;}
             .egg2 { width: 50px; bottom: 5%; left: 5%; opacity: 0.1;}
@@ -327,7 +309,23 @@
         <path d="M12 22C16.4183 22 20 17.5228 20 12C20 6.47715 16 2 12 2C8 2 4 6.47715 4 12C4 17.5228 7.58172 22 12 22Z"/>
     </svg>
 
-    <div id="page1" class="level-container active">
+    <div id="page0" class="level-container active">
+        <h1>Welcome Challenger</h1>
+        <p>Before you begin the hunt, you must identify yourself.</p>
+        
+        <div class="input-group">
+            <label for="playerName">ENTER NAME</label>
+            <input type="text" id="playerName" placeholder="Your Name" autocomplete="off">
+            
+            <label for="playerClub" style="margin-top: 15px;">ENTER CLUB</label>
+            <input type="text" id="playerClub" placeholder="Your Club Name" autocomplete="off">
+            
+            <button onclick="startGame()">BEGIN THE HUNT</button>
+            <div id="error0" class="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="page1" class="level-container">
         <h1>The Golden Egg Protocol</h1>
         <p>The Golden Egg has been stolen.<br>Not by chance… but by design.</p>
         <p>Clues have been scattered across our digital world — hidden in places you scroll past every day.</p>
@@ -418,29 +416,59 @@
     </div>
 
     <script>
+        // ==========================================
+        // YOUR CUSTOM GOOGLE SCRIPT URL IS HERE:
+        // ==========================================
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOoIe_tkC83b2xvuvWV-p1LT1g0mFZY5AZsbwEdzf7x-q5IHt7rYLDaAn2Z2ac3Lk/exec";
+
+        function startGame() {
+            const nameInput = document.getElementById('playerName');
+            const clubInput = document.getElementById('playerClub');
+            const name = nameInput.value.trim();
+            const club = clubInput.value.trim();
+            const errorElement = document.getElementById('error0');
+
+            // Basic validation
+            if (name === "" || club === "") {
+                errorElement.innerText = "You cannot enter without a Name and Club.";
+                errorElement.style.opacity = "1";
+                
+                if(name === "") nameInput.classList.add('shake');
+                if(club === "") clubInput.classList.add('shake');
+                setTimeout(() => {
+                    nameInput.classList.remove('shake');
+                    clubInput.classList.remove('shake');
+                }, 500);
+                return;
+            }
+
+            // Silently send the data to Google Sheets
+            if (GOOGLE_SCRIPT_URL !== "") {
+                const fullUrl = `${GOOGLE_SCRIPT_URL}?name=${encodeURIComponent(name)}&club=${encodeURIComponent(club)}`;
+                fetch(fullUrl, { mode: 'no-cors' }).catch(error => console.log('Silently ignoring fetch error.'));
+            }
+
+            // Move to Level 1
+            errorElement.style.opacity = "0";
+            document.getElementById('page0').classList.remove('active');
+            document.getElementById('page1').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
         function checkAnswer(level, correctAnswer, errorMessage) {
             const inputElement = document.getElementById('input' + level);
             const userAttempt = inputElement.value.toLowerCase().trim();
             const errorElement = document.getElementById('error' + level);
 
             if (userAttempt === correctAnswer) {
-                // Clear errors and inputs
                 errorElement.style.opacity = "0";
                 inputElement.value = "";
-                
-                // Hide current page
                 document.getElementById('page' + level).classList.remove('active');
-                
-                // Show next page
                 document.getElementById('page' + (level + 1)).classList.add('active');
-                
-                // Scroll back to top on mobile for next level
                 window.scrollTo(0, 0);
             } else {
-                // Show error message and shake input
                 errorElement.innerText = errorMessage;
                 errorElement.style.opacity = "1";
-                
                 inputElement.classList.add('shake');
                 setTimeout(() => {
                     inputElement.classList.remove('shake');
@@ -448,14 +476,10 @@
             }
         }
 
-        // Allows users to press "Enter" or "Go" on their mobile keyboard
         function handleKeyPress(event, level) {
             if (event.key === "Enter") {
-                // Determine which button to virtually click based on the level
                 let btn = document.querySelector(`#page${level} button`);
                 btn.click();
-                
-                // Unfocus the input to drop the mobile keyboard
                 document.getElementById('input' + level).blur();
             }
         }
